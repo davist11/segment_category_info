@@ -1,0 +1,12 @@
+h1. Segment Category Info
+
+Return category info by passing in the category_url_title and channel_short_name.
+
+h2. Example Usage:
+
+<pre>{exp:segment_category_info segment="{segment_3}" channel="blog"}
+	{category_id}
+	{category_name}
+	{category_description}
+	{category_image}
+{/exp:segment_category_info}</pre>
