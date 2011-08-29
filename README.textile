@@ -10,3 +10,7 @@ h2. Example Usage:
 	{category_description}
 	{category_image}
 {/exp:segment_category_info}</pre>
+
+h2. Caveat:
+
+If you have multiple category groups assigned to one channel, each category must have a unique url_title.
