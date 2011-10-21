@@ -26,7 +26,7 @@
 
 $plugin_info = array(
 	'pi_name'		=> 'Segment Category Info',
-	'pi_version'	=> '1.0',
+	'pi_version'	=> '1.1',
 	'pi_author'		=> 'Trevor Davis',
 	'pi_author_url'	=> 'http://trevordavis.net/',
 	'pi_description'=> 'Return category info by passing in the category_url_title and channel_short_name.',
@@ -49,33 +49,25 @@ class Segment_category_info {
 		$channel = $this->EE->TMPL->fetch_param('channel', NULL);
 		
 		if($segment && $channel) {
-			
-			$query = $this->EE->db->select('cat_group')
-			       ->from('channels')
-				   ->where('channel_name', $channel)
-			       ->get();
+			$query = $this->EE->db->select('cat_id, cat_name, cat_description, cat_image')
+					->from('channels')
+					->where('channel_name', $channel)
+					->where('cat_url_title', $segment)
+					->join('categories', 'channels.cat_group = categories.group_id')
+					->limit(1)
+					->get();
 			
 			foreach ($query->result() AS $row) {
-				$query = $this->EE->db->select('cat_id, cat_name, cat_description, cat_image')
-				       ->from('categories')
-					   ->where('cat_url_title', $segment)
-					   ->where('group_id', $row->cat_group)
-				       ->get();
-				
-				foreach ($query->result() AS $row) {
-					
-					$tagdata = $this->EE->TMPL->tagdata;
-					
-					$variables[] = array(
-										'category_id' => $row->cat_id,
-										'category_name' => $row->cat_name,
-										'category_description' => $row->cat_description,
-										'category_image' => $row->cat_image
-										);
-					
-					$this->return_data = $this->EE->TMPL->parse_variables($tagdata, $variables);
-					
-				}
+				$tagdata = $this->EE->TMPL->tagdata;
+
+				$variables[] = array(
+									'category_id' => $row->cat_id,
+									'category_name' => $row->cat_name,
+									'category_description' => $row->cat_description,
+									'category_image' => $row->cat_image
+									);
+
+				$this->return_data = $this->EE->TMPL->parse_variables($tagdata, $variables);
 			}
 		}
 	}
