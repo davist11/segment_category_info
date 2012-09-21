@@ -26,7 +26,7 @@
 
 $plugin_info = array(
 	'pi_name'		=> 'Segment Category Info',
-	'pi_version'	=> '1.1',
+	'pi_version'	=> '1.2',
 	'pi_author'		=> 'Trevor Davis',
 	'pi_author_url'	=> 'http://trevordavis.net/',
 	'pi_description'=> 'Return category info by passing in the category_url_title and channel_short_name.',
@@ -59,12 +59,17 @@ class Segment_category_info {
 			
 			foreach ($query->result() AS $row) {
 				$tagdata = $this->EE->TMPL->tagdata;
+				
+				//Parse file paths
+				$this->EE->load->library('typography');
+				$this->EE->typography->parse_images = TRUE;
+				$cat_image = $this->EE->typography->parse_file_paths($row->cat_image);
 
 				$variables[] = array(
 									'category_id' => $row->cat_id,
 									'category_name' => $row->cat_name,
 									'category_description' => $row->cat_description,
-									'category_image' => $row->cat_image
+									'category_image' => $cat_image
 									);
 
 				$this->return_data = $this->EE->TMPL->parse_variables($tagdata, $variables);
