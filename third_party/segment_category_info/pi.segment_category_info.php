@@ -107,14 +107,14 @@ class Segment_category_info {
 		ob_start();
 ?>
 
-	{exp:segment_category_info segment="{segment_3}" channel="blog" multiple_cats="y"}
+	{exp:segment_category_info segment="{segment_3}" channel="blog" multiple="y"}
 		{category_id}
 		{category_name}
 		{category_description}
 		{category_image}
 	{/exp:segment_category_info}
 
-	NOTE: multiple_cats= enables matching when a channel has multiple category groups. Values are 'y' or 'n' (Default: 'n').
+	NOTE: multiple= enables matching when a channel has multiple category groups. Values are 'y' or 'n' (Default: 'n').
 
 <?php
 		return ob_get_clean();
