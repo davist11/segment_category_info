@@ -11,7 +11,7 @@
  * @since		Version 2.0
  * @filesource
  */
- 
+
 // ------------------------------------------------------------------------
 
 /**
@@ -36,49 +36,69 @@ $plugin_info = array(
 
 class Segment_category_info {
 
-	public $return_data;
-    
+	public $return_data = '';
+
 	/**
 	 * Constructor
 	 */
 	public function __construct()
 	{
 		$this->EE =& get_instance();
-		
-		$segment = $this->EE->TMPL->fetch_param('segment', NULL);
-		$channel = $this->EE->TMPL->fetch_param('channel', NULL);
-		
-		if($segment && $channel) {
-			$query = $this->EE->db->select('cat_id, cat_name, cat_description, cat_image')
-					->from('channels')
-					->where('channel_name', $channel)
-					->where('cat_url_title', $segment)
-					->join('categories', 'channels.cat_group = categories.group_id')
-					->limit(1)
-					->get();
-			
-			foreach ($query->result() AS $row) {
+
+		$segment = $this->EE->TMPL->fetch_param('segment');
+		$channel = $this->EE->TMPL->fetch_param('channel');
+
+		# Require both segment= and channel=
+		if ($segment && $channel) {
+			# Support multiple, pipe-separated values.
+			$segments = preg_split('/\|/', $segment, -1, PREG_SPLIT_NO_EMPTY);
+			$channels = preg_split('/\|/', $channel, -1, PREG_SPLIT_NO_EMPTY);
+			$variables = array();
+
+			$this->EE->db->select('cat_id, cat_name, cat_description, cat_image')
+					->from('channels chan')
+					->where_in('channel_name', $channels)
+					->where_in('cat_url_title', $segments)
+					->join('categories cat', 'chan.cat_group = cat.group_id');
+					//->limit(1);
+
+			$sql = $this->EE->db->_compile_select();
+
+			# multiple= support. This is an ugly hack, so lets make sure the user really wants it.
+			if ($this->EE->TMPL->fetch_param('multiple', 'no') == 'yes') {
+				$sql = preg_replace('/\s+ON\s+.*?\s+WHERE\s+/si', ' ON FIND_IN_SET(cat.group_id, REPLACE(chan.cat_group, "|", ",")) WHERE ', $sql);
+			}
+
+			$query = $this->EE->db->query($sql);
+			$this->EE->db->_reset_select();
+
+			foreach ($query->result() as $count => $row) {
 				$tagdata = $this->EE->TMPL->tagdata;
-				
+
 				//Parse file paths
 				$this->EE->load->library('typography');
 				$this->EE->typography->parse_images = TRUE;
 				$cat_image = $this->EE->typography->parse_file_paths($row->cat_image);
 
 				$variables[] = array(
-									'category_id' => $row->cat_id,
-									'category_name' => $row->cat_name,
-									'category_description' => $row->cat_description,
-									'category_image' => $cat_image
-									);
+					'category_id' => $row->cat_id,
+					'category_name' => $row->cat_name,
+					'category_description' => $row->cat_description,
+					'category_image' => $cat_image,
+					'total' => $query->num_rows(),
+					'count' => $count
+				);
+			}
 
+			if ($query->num_rows()) {
+				# We get automatic backspace= support with this.
 				$this->return_data = $this->EE->TMPL->parse_variables($tagdata, $variables);
 			}
 		}
 	}
-	
+
 	// ----------------------------------------------------------------
-	
+
 	/**
 	 * Plugin Usage
 	 */
@@ -87,17 +107,17 @@ class Segment_category_info {
 		ob_start();
 ?>
 
-	{exp:segment_category_info segment="{segment_3}" channel="blog"}
+	{exp:segment_category_info segment="{segment_3}" channel="blog" multiple_cats="y"}
 		{category_id}
 		{category_name}
 		{category_description}
 		{category_image}
 	{/exp:segment_category_info}
-	
+
+	NOTE: multiple_cats= enables matching when a channel has multiple category groups. Values are 'y' or 'n' (Default: 'n').
+
 <?php
-		$buffer = ob_get_contents();
-		ob_end_clean();
-		return $buffer;
+		return ob_get_clean();
 	}
 }
 
